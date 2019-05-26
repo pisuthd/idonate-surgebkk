@@ -150,7 +150,7 @@ class Settings extends React.Component {
                            </tr>
                             */}
                            <tr>
-                             <td>{ this.state.dai }</td>
+                             <td> { this.state.dai }</td>
                              <td><StyledButton color="danger" size="sm">Sell 10 DAI</StyledButton></td>
                            </tr>
                          </tbody>

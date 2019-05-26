@@ -5,7 +5,8 @@ import Webcam from "react-webcam";
 import Overlay from 'react-image-overlay'
 import FileBase64 from 'react-file-base64';
 import { ethers } from 'ethers';
-import { IDonateABI, IDonateByteCode } from "../../ABI";
+import { IDonateABI, IDonateByteCode, IDonateIndexABI } from "../../ABI";
+import ipfs from "../../ipfs";
 import { Button,Spinner, Form, FormGroup, Label, Input, FormText, Alert } from 'reactstrap';
 import {
     ArrowDownLeft,
@@ -149,7 +150,29 @@ class New extends React.Component {
 
     uploadPics = async  (pic, picOverlay, pos) => {
         console.log("uploading...");
-        
+        const picBuf = Buffer.from(pic, 'utf-8');
+
+        const picOverlayBuf = Buffer.from(picOverlay, 'utf-8');
+
+        const ipfsPicHash = await ipfs.add(picBuf);
+
+        console.log("ipfsPicHash : ", ipfsPicHash[0].hash);
+
+        const ipfsPicOverlayHash = await ipfs.add(picOverlayBuf);
+
+        console.log("ipfsPicOverlayHash : ", ipfsPicOverlayHash[0].hash);
+
+        // const result = await ipfs.get(ipfsPicHash[0].hash);
+
+        // console.log("resutl : ",result[0].content.toString('utf8'))
+
+
+        return {
+            picHash : ipfsPicHash[0].hash,
+            picOverlayHash : ipfsPicOverlayHash[0].hash,
+            pos: pos
+        }
+ 
     }
 
     submit = async () => {
@@ -181,14 +204,12 @@ class New extends React.Component {
             loading : true
         })
 
-        await this.uploadPics(this.state.image,this.state.imageOverlay, this.state.overlayPos );
         
-        /*
+        
+        
         const infuraProvider = await new ethers.providers.InfuraProvider("kovan", "c719e84c3f494d3ca05aa0fb5a36a2f8");
         
         const wallet = await new ethers.Wallet(this.props.privkey, infuraProvider)
-
-        // const etherContract = new ethers.Contract(this.props.contractAddress , IDonateABI , wallet);
 
         let factory = await new ethers.ContractFactory(IDonateABI, IDonateByteCode, wallet);
         
@@ -196,19 +217,55 @@ class New extends React.Component {
         
         let contract = await factory.deploy(amount, this.state.contractTitle , this.state.contractDescription  , this.state.contractFrom);
 
-        console.log(contract.address);
+        console.log("Contract Address : ",contract.address);
 
-
-        console.log(contract.deployTransaction.hash);
+        console.log(" Tx Hash : ", contract.deployTransaction.hash);
         this.setState({
             miningStatus : `Confirming, Tx Hash : ${contract.deployTransaction.hash}`
         })
+
+
+        // await this.uploadPics(this.state.image,this.state.imageOverlay, this.state.overlayPos );
+
         
         await contract.deployed()
-        */
+
+
+        this.setState({
+            miningStatus : `Confirmed, Indexing...`
+        })
+
+
+        const indexContract = new ethers.Contract( this.props.index, IDonateIndexABI, wallet);
+        const tx = await indexContract.addProject( contract.address );
+        console.log("waiting tx hash : ",tx.hash," until it is mined...")
+        await tx.wait();
+        console.log("mined.")
+
+        this.setState({
+            miningStatus : `Indexed, Uploading pictures to IPFS node.`
+        })
+
+
+        const result = await this.uploadPics(this.state.image,this.state.imageOverlay, this.state.overlayPos );
+
+        if (result.picHash && result.picOverlayHash, result.pos) {
+            console.log("found pics, uploading to IPFS")
+            const projectContract = new ethers.Contract( contract.address , IDonateABI , wallet);
+            const txIpfs = await projectContract.attachPictureUrl(result.picHash, result.picOverlayHash, result.pos);
+            console.log("waiting tx hash : ",txIpfs.hash," until it is mined...")
+            await txIpfs.wait();
+            console.log("ipfs hash contract confirmed.")
+        } 
+
+        
+
+        // const projectContract = new ethers.Contract( contract.deployTransaction.hash , IDonateABI , wallet);
+
+        
             this.setState({
                 loading : false,
-                // miningStatus : `Done!, Address : ${contract.deployTransaction.hash }`
+                miningStatus : `Done!, Contract Address : ${contract.deployTransaction.hash }`
             })
     }
 
@@ -265,7 +322,7 @@ class New extends React.Component {
                             <div style={{display:"flex", marginTop: "20px", marginBottom: "10px"}}>
                                 <StyledButton onClick={this.setTL} color={this.state.overlayPos === "topLeft" ? "info" :"secondary" }><ArrowUpLeft/></StyledButton>
                                 <StyledButton onClick={this.setTR} color={this.state.overlayPos === "topRight" ? "info" :"secondary" }><ArrowUpRight/></StyledButton>  
-                                <StyledButton onClick={this.setCenter} color={this.state.overlayPos === "center" ? "info" :"secondary" }><Circle/></StyledButton>
+                                <StyledButton onClick={this.setCenter} color={this.state.overlayPos === "center" ? "info" :"secondary" }>Center</StyledButton>
                                 <StyledButton onClick={this.setBL} color={this.state.overlayPos === "bottomLeft" ? "info" :"secondary" }><ArrowDownLeft/></StyledButton>
                                 <StyledButton onClick={this.setBR} color={this.state.overlayPos === "bottomRight" ? "info" :"secondary" }><ArrowDownRight/></StyledButton>
                             </div>
