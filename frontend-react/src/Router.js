@@ -27,7 +27,8 @@ class AppRouter extends React.Component {
 
     state = {
         user : "alice", // bob, charlie, dave
-        privkey : "B3B67F8F57CCB981463F74A48165A5ABB1A72BF0F35E7E0619447C073C5BED99"
+        privkey : "B3B67F8F57CCB981463F74A48165A5ABB1A72BF0F35E7E0619447C073C5BED99",
+        contractAddress : ""
     }
 
     changeUser = (name) => {

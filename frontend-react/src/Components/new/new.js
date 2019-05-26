@@ -3,8 +3,10 @@ import {Content} from "../shared/common";
 import styled from 'styled-components'
 import Webcam from "react-webcam";
 import Overlay from 'react-image-overlay'
-import FileBase64 from 'react-file-base64'; 
-import { Button, Form, FormGroup, Label, Input, FormText } from 'reactstrap';
+import FileBase64 from 'react-file-base64';
+import { ethers } from 'ethers';
+import { IDonateABI, IDonateByteCode } from "../../ABI";
+import { Button,Spinner, Form, FormGroup, Label, Input, FormText, Alert } from 'reactstrap';
 import {
     ArrowDownLeft,
     ArrowDownRight,
@@ -34,6 +36,7 @@ class New extends React.Component {
         // this.toggle = this.toggle.bind(this);
         this.state = {
             preview: "",
+            loading : false,
             hasCamera: false,
             image: null,
             state: "",
@@ -41,8 +44,9 @@ class New extends React.Component {
             overlayPos : "bottomRight",
             contractTitle:"",
             contractDescription: "",
-            contractTarget : "",
-            contractFrom : ""
+            contractTarget : "0.4",
+            contractFrom : "",
+            miningStatus : ""
         };
     }
 
@@ -124,10 +128,96 @@ class New extends React.Component {
         })
     }
 
-    submit = () => {
+
+    setMinTarget = () => {
+        this.setState({
+            contractTarget : "0.2"
+        })
+    }
+
+    setMaxTarget = () => {
+        this.setState({
+            contractTarget : "0.6"
+        })
+    }
+
+    setDefaultTarget = () => {
+        this.setState({
+            contractTarget : "0.4"
+        })
+    }
+
+    uploadPics = async  (pic, picOverlay, pos) => {
+        console.log("uploading...");
         
     }
 
+    submit = async () => {
+    
+        if (!this.props.privkey) {
+            alert("No privkey provided!")
+            return;
+        }
+
+        if (!this.state.contractTitle) {
+            alert("No Title!")
+            return;
+        }
+
+        if (!this.state.contractFrom) {
+            alert("From who is not provided!")
+            return;
+        }
+
+        if (!this.state.image || !this.state.imageOverlay || !this.state.overlayPos ) {
+            alert("Cannot find pics!")
+            return;
+        }
+
+
+
+
+        this.setState({
+            loading : true
+        })
+
+        await this.uploadPics(this.state.image,this.state.imageOverlay, this.state.overlayPos );
+        
+        /*
+        const infuraProvider = await new ethers.providers.InfuraProvider("kovan", "c719e84c3f494d3ca05aa0fb5a36a2f8");
+        
+        const wallet = await new ethers.Wallet(this.props.privkey, infuraProvider)
+
+        // const etherContract = new ethers.Contract(this.props.contractAddress , IDonateABI , wallet);
+
+        let factory = await new ethers.ContractFactory(IDonateABI, IDonateByteCode, wallet);
+        
+        const amount = ethers.utils.parseEther(this.state.contractTarget);
+        
+        let contract = await factory.deploy(amount, this.state.contractTitle , this.state.contractDescription  , this.state.contractFrom);
+
+        console.log(contract.address);
+
+
+        console.log(contract.deployTransaction.hash);
+        this.setState({
+            miningStatus : `Confirming, Tx Hash : ${contract.deployTransaction.hash}`
+        })
+        
+        await contract.deployed()
+        */
+            this.setState({
+                loading : false,
+                // miningStatus : `Done!, Address : ${contract.deployTransaction.hash }`
+            })
+    }
+
+    handleChange= (e) => {
+        this.setState({
+            [e.target.id] : e.target.value
+        })
+    }
+    
     render() {
         return (
             <>
@@ -206,32 +296,37 @@ class New extends React.Component {
                             watermark={false}
                         />
                         <div style={{ marginTop: "20px", marginBottom: "10px"}}>
-                        <Form>
+                        <>
                                 <FormGroup>
                                     <Label for="title">Title</Label>
-                                    <Input type="text" name="title" id="title" />
+                                    <Input value={this.state.contractTitle} onChange={this.handleChange}  type="text" name="title" id="contractTitle" />
                                 </FormGroup>
                                 <FormGroup>
                                     <Label for="desc">Description</Label>
-                                    <Input type="textarea" name="text" id="desc" />
+                                    <Input value={this.state.contractDescription}  onChange={this.handleChange}   type="textarea" name="text" id="contractDescription" />
                                 </FormGroup>
                                 <FormGroup>
                                     <Label for="from">From</Label>
-                                    <Input type="text" name="from" id="from" />
+                                    <Input value={this.state.contractFrom} onChange={this.handleChange}  type="text" name="from" id="contractFrom" />
                                 </FormGroup>
                                 <FormGroup>
-                                    <Label for="target">Target</Label>
-                                    <Input type="number" name="target" id="target" />
-                                </FormGroup>    
-                        </Form>
+                                    <Label style={{marginRight:"4px"}}>Target</Label>
+                                    <StyledButton size="sm" onClick={this.setMinTarget} color={this.state.contractTarget === "0.2" ? "primary" : "secondary"}>0.2 ETH</StyledButton>
+                                    <StyledButton  size="sm" onClick={this.setDefaultTarget}  color={this.state.contractTarget === "0.4" ? "primary" : "secondary"} >0.4 ETH</StyledButton>
+                                    <StyledButton size="sm" onClick={this.setMaxTarget}  color={this.state.contractTarget === "0.6" ? "primary" : "secondary"} >0.6 ETH</StyledButton>
+                                </FormGroup>
+                        </>
                         </div>
-
-
+                        <hr/>
+                        <p style={{fontSize:"12px" , wordBreak : "break-all"}}>
+                        {this.state.miningStatus}</p>
                         <div style={{display:"flex", marginTop: "20px", marginBottom: "10px"}}>
-                            <StyledButton onClick={this.backToCapture} color="secondary">Back</StyledButton>
-                            <StyledButton onClick={this.submit} color="success">Submit</StyledButton>
-                            
+                            <StyledButton disabled={this.state.loading} onClick={this.backToCapture} color="secondary">Back</StyledButton>
+                            <StyledButton disabled={this.state.loading} onClick={this.submit} color="success">Submit</StyledButton>
+                            { this.state.loading && <> <Spinner type="grow" />  </>}
                         </div>
+                       
+                        
                     </Content>
                 }
             </>
