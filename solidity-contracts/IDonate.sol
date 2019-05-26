@@ -12,8 +12,8 @@ contract IDonate {
     string public description;
     string public from;
     
-    string public pictureHash;
-    string public overlayPictureHash;
+    string public pictureUrl;
+    string public overlayPictureUrl;
     string public position;
     
     
@@ -25,9 +25,9 @@ contract IDonate {
         from = _from;
     }
     
-    function attachPictureHash(string memory _pictureHash, string memory _overlayPictureHash, string memory _position) public {
-        pictureHash = _pictureHash;
-        overlayPictureHash = _overlayPictureHash;
+    function attachPictureUrl(string memory _pictureUrl, string memory _overlayPictureUrl, string memory _position) public {
+        pictureUrl = _pictureUrl;
+        overlayPictureUrl = _overlayPictureUrl;
         position = _position;
     }
     

@@ -58,7 +58,6 @@ export default class Header extends React.Component {
               <NavItem>
                 <NavLink><Link to="/settings">Settings</Link></NavLink>
               </NavItem>
-              
             </Nav>
           </Collapse>
         </Navbar>

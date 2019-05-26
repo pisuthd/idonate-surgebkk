@@ -114,6 +114,7 @@ class Settings extends React.Component {
 
 
 
+
     render() {
         return (
             <Content>
@@ -125,7 +126,7 @@ class Settings extends React.Component {
 
                 </div>
                 <hr/>
-                <Header>{this.props.user} Account</Header>
+                <Header>Account : {this.props.user}</Header>
                 <div style={{display:"flex"}}>
                     { this.state.loading ?  <Spinner style={{ width: '3rem', height: '3rem' }} type="grow" />  :
                          <>
